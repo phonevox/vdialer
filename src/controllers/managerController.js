@@ -1,24 +1,59 @@
 #!/usr/bin/node
 const path = require("path");
-const { findManager, insertManager } = require(path.resolve("src/db")) 
-
-async function listManager(req, res) {
-    console.log( await findManager() )
-    res.json({status: 200})
-}
+const { listManagers, insertManager, findManagerById } = require(path.resolve("src/db"))
+const { Logger } = require(path.resolve('src/utils/logger'));
+const log = new Logger("managerController", false).useEnvConfig().create();
 
 async function addManager(req, res) {
-    let ret
+    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+
     try {
-        console.log('Request body: ' + JSON.stringify(req.body))
-        ret = await insertManager(req.body);
+        let ret = await insertManager(req.body);
+        return res.json(ret._id);
     } catch (error) {
+        log.error(`${req.logPrefix} ${JSON.stringify(error)}`);
         return res.json(error.message);
     }
-    return res.json(ret._id);
+}
+
+async function findManager(req, res) {
+    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+
+    try {
+        return res.json(await findManagerById(req.body));
+    } catch (error) {
+        log.error(`${req.logPrefix} ${JSON.stringify(error)}`);
+        return res.json(error.message);
+    }
+}
+
+async function editManager(req, res) {
+    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+
+    return res.json(req.body);
+}
+
+async function destroyManager(req, res) {
+    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+
+    return res.json(req.body);
+}
+
+async function listManager(req, res) {
+    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+
+    try {
+        return res.json(await listManagers());
+    } catch (error) {
+        log.error(`${req.logPrefix} ${JSON.stringify(error)}`);
+        return res.json(error.message);
+    }
 }
 
 module.exports = {
-    listManager,
-    addManager
+    addManager,
+    editManager,
+    destroyManager,
+    findManager,
+    listManager
 }

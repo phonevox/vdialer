@@ -1,8 +1,10 @@
 #!/usr/bin/node
 const path = require("path")
 require("dotenv").config({ path: path.resolve(`.env.${process.env.NODE_ENV || 'dev'}`)});
-const { Manager } = require(path.resolve("src/models/manager.model"))
+const { Logger } = require(path.resolve('src/utils/logger'));
+const log = new Logger("database", false).useEnvConfig().create();
 const mongoose = require("mongoose");
+const { Manager } = require(path.resolve("src/models/manager.model"))
 
 let singleton;
 
@@ -10,23 +12,37 @@ async function connect() {
 
     if (singleton) return singleton;
 
-    await mongoose.connect(`mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/`)
+    let connectionUrl = `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/`
+    log.trace(`Trying to connect to database ${connectionUrl}`);
+    await mongoose.connect(connectionUrl, {dbName: process.env.MONGODB_DATABASE || 'vdialer-dbnotset'})
+
+    log.trace(`Database connected!`)
     singleton = mongoose
 
     return singleton
 }
 
-async function findManager() {
+async function listManagers() {
     await connect();
-    return Manager.find();
+    let query = Manager.find()
+    return query;
+}
+
+async function findManagerById(search) {
+    await connect();
+    let query = Manager.findOne(search)
+    let filtered = query.select('-_id -__v')
+    return filtered;
 }
 
 async function insertManager(manager) {
     await connect();
-    return Manager.create(manager)
+    let query = Manager.create(manager)
+    return query;
 };
 
 module.exports = {
-    findManager,
-    insertManager
+    listManagers,
+    insertManager,
+    findManagerById
 }

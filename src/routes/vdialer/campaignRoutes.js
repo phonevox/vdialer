@@ -1,11 +1,14 @@
 #!/usr/bin/node
 const path = require("path");
 const express = require('express');
-const { Logger } = require(path.resolve('src/utils/logger'));
-let router = express.Router();
+const router = express.Router();
 
-router.post('/campaign/add', () => {})
-router.post('/campaign/edit', () => {})
-router.post('/campaign/delete', () => {})
+// controllers
+// const {} = require(path.resolve("src/controllers/campaignController"))
+
+// router.post('/campaign/add', addCampaign)
+// router.post('/campaign/edit', editCampaign)
+// router.post('/campaign/delete', destroyCampaign)
+// router.get('/campaign/list', listCampaign)
 
 module.exports = router;

@@ -1,3 +1,8 @@
+#!/usr/bin/node
+const path = require("path");
+const { Logger } = require(path.resolve("src/utils/logger"));
+const log = new Logger("middlewares", false).useEnvConfig().create();
+
 const rateLimit = require('express-rate-limit');
 
 const AUTH_RATELIMIT_WINDOW_MINUTES  = 15 // minutos
@@ -41,7 +46,7 @@ const performChecks = (req, res, next) => {
 
 const setLogPrefix = (req, res, next) => {
     req.clientIp = getClientIp(req)
-    req.logPrefix = `[${req.clientIp}] [${req.originalUrl || req.url}]`
+    req.logPrefix = `[${req.clientIp}] [${req.method}:${req.originalUrl || req.url}]`
     next()
 };
 
@@ -49,7 +54,8 @@ const setLogPrefix = (req, res, next) => {
 // Parâmetros esperados na requisição
 const expects = (parametrosObrigatorios) => {
     return (req, res, next) => {
-        console.log(`${req.originalUrl || req.url} - Validando parâmetros ${parametrosObrigatorios}`)
+        log.info(`${req.logPrefix} Validando parâmetros ${parametrosObrigatorios}`)
+        // console.log(`${req.originalUrl || req.url} - Validando parâmetros ${parametrosObrigatorios}`)
         const parametrosFaltando = [];
         
         // Verifica se todos os parâmetros obrigatórios estão presentes no corpo da requisição

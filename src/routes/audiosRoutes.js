@@ -1,9 +1,12 @@
 #!/usr/bin/node
 const path = require("path");
 const express = require('express');
-const { Logger } = require(path.resolve('src/utils/logger'));
-let router = express.Router();
+const router = express.Router();
 
-router.use('/audios', express.static(path.resolve("public/audios")))
+// controllers
+const { servePublicAudios } = require(path.resolve("src/controllers/audiosController"))
+
+// Definindo a rota para servir arquivos de áudio por nome de arquivo
+router.get('/audios/:filename', servePublicAudios);
 
 module.exports = router;
