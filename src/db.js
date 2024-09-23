@@ -35,6 +35,12 @@ async function findManagerById(search) {
     return filtered;
 }
 
+async function removeManager(manager) {
+    await connect();
+    let query = Manager.deleteOne(manager)
+    return query;
+};
+
 async function insertManager(manager) {
     await connect();
     let query = Manager.create(manager)

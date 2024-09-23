@@ -9,11 +9,11 @@ const log = new Logger("api.js", false).useEnvConfig().create();
 
 // - Bull ---
 // - Express ---
-const { setLogPrefix } = require(path.resolve('src/middlewares'));
+const { genericErrorHandling, setLogPrefix } = require(path.resolve('src/middlewares'));
 const audiosRoute = require(path.resolve('src/routes/audiosRoutes'));
-const callRoutes = require(path.resolve('src/routes/vdialer/callRoutes'));
-const campaignRoutes = require(path.resolve('src/routes/vdialer/campaignRoutes'));
-const managerRoutes = require(path.resolve('src/routes/vdialer/managerRoutes'));
+const callRoutes = require(path.resolve('src/routes/api/callRoutes'));
+const campaignRoutes = require(path.resolve('src/routes/api/campaignRoutes'));
+const managerRoutes = require(path.resolve('src/routes/api/managerRoutes'));
 
 // Inicializando as rotas do Express
 const app = express();
@@ -22,9 +22,11 @@ app.use(helmet());
 app.use(setLogPrefix); // seta o prefixo pro log das requisições, acessível como "req.logPrefix"
 
 app.use('/', audiosRoute);
-app.use('/vdialer', callRoutes); // Faço as chamadas. Repasso os "afazeres" e o servidor em que executará
-app.use('/vdialer', campaignRoutes); // Registro os "afazeres"
-app.use('/vdialer', managerRoutes); // Registro os servidores
+app.use('/vdialer/api', callRoutes); // Faço as chamadas. Repasso os "afazeres" e o servidor em que executará
+app.use('/vdialer/api', campaignRoutes); // Registro os "afazeres"
+app.use('/vdialer/api', managerRoutes); // Registro os servidores
+
+app.use(genericErrorHandling);
 
 app.listen(process.env.EXPRESS_PORT, () => {
     console.log(`You are running in <<${process.env.ENVIRONMENT}>> environment! (NODE_ENV:${process.env.NODE_ENV})`)

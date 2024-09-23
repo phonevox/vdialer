@@ -1,6 +1,9 @@
 #!/usr/bin/node
 const path = require("path");
 const { Logger } = require(path.resolve("src/utils/logger"));
+const { fromError } = require("zod-validation-error");
+const { ZodError } = require("zod");
+
 const log = new Logger("middlewares", false).useEnvConfig().create();
 
 const rateLimit = require('express-rate-limit');
@@ -50,6 +53,16 @@ const setLogPrefix = (req, res, next) => {
     next()
 };
 
+const genericErrorHandling = (err, req, res, next) => {
+    if (err instanceof ZodError) {
+        const validationError = fromError(err);
+        log.debug(`[VALIDATE HANDLER] ${req.logPrefix} ${validationError.toString()}`);
+        return res.status(400).json({ error: validationError.toString() });
+    }
+
+    log.critical(`[GENERIC ERROR HANDLER] ${req.logPrefix} Um erro ocorreu: "${JSON.stringify(err)}"`)
+    return res.status(500).json({ message: 'Erro interno, tente novamente mais tarde!' });
+};
 
 // Parâmetros esperados na requisição
 const expects = (parametrosObrigatorios) => {
@@ -58,19 +71,19 @@ const expects = (parametrosObrigatorios) => {
         // console.log(`${req.originalUrl || req.url} - Validando parâmetros ${parametrosObrigatorios}`)
         const parametrosFaltando = [];
         
-        // Verifica se todos os parâmetros obrigatórios estão presentes no corpo da requisição
         for (const parametro of parametrosObrigatorios) {
-            if (!(parametro in req.body)) {
+
+            // will search both req.body and req.params for the parameter.
+            // maybe it shouldnt?
+            if (!(parametro in req.body) & !(parametro in req.params)) {
                 parametrosFaltando.push(parametro);
             }
         }
         
-        // Se houver parâmetros faltando, retorna um erro 401 com uma mensagem indicando quais parâmetros estão faltando
         if (parametrosFaltando.length > 0) {
             return res.status(401).json({ status: 'error', error: `Parâmetros faltando: ${parametrosFaltando.join(', ')}` });
         }
-        
-        // Se todos os parâmetros obrigatórios estiverem presentes, passa para o próximo middleware ou rota
+
         next();
     };
 };
@@ -81,4 +94,5 @@ module.exports = {
     setLogPrefix,
     ratelimit_route,
     ratelimit_auth,
+    genericErrorHandling
 }
