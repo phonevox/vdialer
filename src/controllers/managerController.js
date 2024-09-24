@@ -5,57 +5,63 @@ const { schema } = require(path.resolve("src/models"));
 const { Logger } = require(path.resolve('src/utils/logger'));
 const log = new Logger("managerController", false).useEnvConfig().create();
 
-
 async function createManager(req, res, next) {
     try {
         log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+        
         schema.zManager.parse(req.body);
-        
         let ret = await insertManager(req.body);
-        
         return res.json(ret._id);
-    
     } catch (error) {
         return next(error)
     }
 }
 
-async function getManagers(req, res) {
-    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
-
+async function getManagers(req, res, next) {
     try {
+        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+        
         return res.json(await listManagers());
     } catch (error) {
-        log.error(`${req.logPrefix} ${JSON.stringify(error)}`);
-        return res.json(error.message);
+        return next(error)
     }
 }
 
-async function updateManager(req, res) {
-    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
-    const { id } = req.params;
+async function updateManager(req, res, next) {
+    try {
+        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+        const { id } = req.params;
+        log.trace('id: ' + id)
 
-    log.trace('id: ' + id)
+        // pega os dados in-db
+        // monta o novo valor
+        // dá parse pra ver se vai ficar tudo certo
+        // estando tudo certo, manda pro db a alteração
 
-    // validação de parâmetros
-
-    // resumo da alteração em log
-
-    // tentativa
-
-    return res.json(req.body);
+        return res.json(req.body);
+    } catch (error) {
+        next(error);
+    }
 }
 
-async function replaceManager(req, res) {
-    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
-
-    return res.json(req.body);
+async function replaceManager(req, res, next) {
+    try {
+        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+        
+        return res.json(req.body);
+    } catch (error) {
+        next(error);
+    }
 }
 
-async function deleteManager(req, res) {
-    log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
-
-    res.json({'potato': 'fried'})
+async function deleteManager(req, res, next) {
+    try {
+        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+        
+        res.json({ 'potato': 'fried' })
+    } catch (error) {
+        next(error);
+    }
 }
 
 module.exports = {

@@ -5,4 +5,5 @@ const { Logger } = require(path.resolve('src/utils/logger'));
 const log = new Logger("campaignController", false).useEnvConfig().create();
 
 module.exports = {
+    
 }
