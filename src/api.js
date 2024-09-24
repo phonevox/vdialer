@@ -9,7 +9,7 @@ const log = new Logger("api.js", false).useEnvConfig().create();
 
 // - Bull ---
 // - Express ---
-const { genericErrorHandling, setLogPrefix } = require(path.resolve('src/middlewares'));
+const { errorValidation, setLogPrefix } = require(path.resolve('src/middlewares'));
 const audiosRoute = require(path.resolve('src/routes/audiosRoutes'));
 const callRoutes = require(path.resolve('src/routes/api/callRoutes'));
 const campaignRoutes = require(path.resolve('src/routes/api/campaignRoutes'));
@@ -26,7 +26,7 @@ app.use('/vdialer/api', callRoutes); // Faço as chamadas. Repasso os "afazeres"
 app.use('/vdialer/api', campaignRoutes); // Registro os "afazeres"
 app.use('/vdialer/api', managerRoutes); // Registro os servidores
 
-app.use(genericErrorHandling);
+app.use(errorValidation);
 
 app.listen(process.env.EXPRESS_PORT, () => {
     console.log(`You are running in <<${process.env.ENVIRONMENT}>> environment! (NODE_ENV:${process.env.NODE_ENV})`)
