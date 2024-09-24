@@ -67,6 +67,6 @@ const ManagerSchema = zodSchema(zManager, {timestamps:true}); // zod-to-mongoose
 const Manager = mongoose.model("Manager", ManagerSchema);
 
 module.exports = {
-    Manager, 
+    Manager,
     zManager
 };

@@ -6,7 +6,7 @@ extendZod(z); // vou leigamente assumir que não tem problema extender várias v
 
 const {Call, zCall} = require(path.resolve("src/models/call.model"));
 const {Campaign, zCampaign} = require(path.resolve("src/models/campaign.model"));
-const {Manager, zManager} = require(path.resolve("src/models/manager.model"));
+const {Manager, zManager } = require(path.resolve("src/models/manager.model"));
 
 module.exports = {
     model: {

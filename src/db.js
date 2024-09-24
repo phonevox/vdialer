@@ -8,6 +8,11 @@ const { Manager } = require(path.resolve("src/models/manager.model"))
 
 let singleton;
 
+function isDatabaseConnected() {
+    if (singleton) return true;
+    return false;
+}
+
 async function connect() {
 
     if (singleton) return singleton;
@@ -22,33 +27,42 @@ async function connect() {
     return singleton
 }
 
-async function listManagers() {
+async function managerCreate(manager) {
+    await connect();
+    let query = Manager.create(manager);
+    return query;
+};
+
+async function managerRemove(id) {
+    await connect();
+    let query = Manager.deleteOne(id);
+    return query;
+};
+
+async function managerFind(searchQuery, selectString = '') {
+    await connect();
+    let query = Manager.findOne(searchQuery);
+    let filtered = query.select(selectString);
+    return filtered;
+}
+
+async function managerList() {
     await connect();
     let query = Manager.find()
     return query;
 }
 
-async function findManagerById(search) {
+async function managerUpdate(id, newData) {
     await connect();
-    let query = Manager.findOne(search)
-    let filtered = query.select('-_id -__v')
-    return filtered;
+    let query = Manager.findOneAndUpdate({_id: id}, newData)
+    return query;
 }
 
-async function removeManager(manager) {
-    await connect();
-    let query = Manager.deleteOne(manager)
-    return query;
-};
-
-async function insertManager(manager) {
-    await connect();
-    let query = Manager.create(manager)
-    return query;
-};
-
 module.exports = {
-    listManagers,
-    insertManager,
-    findManagerById
+    managerList,
+    managerCreate,
+    managerUpdate,
+    managerFind,
+    managerRemove,
+    isDatabaseConnected,
 }
