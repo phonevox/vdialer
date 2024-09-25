@@ -1,7 +1,7 @@
 #!/usr/bin/node
 const path = require("path");
 const { ObjectId } = require("mongoose").Types;
-const { managerCreate, managerUpdate, managerFind, managerFindOne } = require(path.resolve("src/db"))
+const { managerCreate, managerUpdate, managerFind, managerFindOne, managerRemove } = require(path.resolve("src/db"))
 const { schema } = require(path.resolve("src/models"));
 const { Logger } = require(path.resolve('src/utils/logger'));
 const _ = require("lodash"); // util module, for _.merge
@@ -47,7 +47,7 @@ async function getManagerById(req, res, next) {
         let returnedManager = await managerFindOne({ _id: id }, "-__v");
         log.unit(`${req.logPrefix} From database: ${JSON.stringify(returnedManager)}`);
         if (!returnedManager) {
-            return res.status(404).json({ id: id });
+            return res.status(404).json({ message: 'Not found.' });
         };
 
         return res.status(200).json(returnedManager._doc);
@@ -163,7 +163,8 @@ async function deleteManager(req, res, next) {
         const { id } = req.params;
         if (!ObjectId.isValid(id)) { return res.status(404).json({ message: "Invalid id." }) }
 
-        res.status(200).json({ 'potato': 'fried' })
+        let ret = await managerRemove(id);
+        res.status(200).json({ message: 'Successfully deleted' })
     } catch (error) {
         next(error);
     }

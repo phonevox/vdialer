@@ -35,7 +35,7 @@ async function managerCreate(manager) {
 
 async function managerRemove(id) {
     await connect();
-    let query = Manager.deleteOne(id);
+    let query = Manager.deleteOne({_id: id});
     return query;
 };
 
