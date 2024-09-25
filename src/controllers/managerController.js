@@ -4,6 +4,7 @@ const { ObjectId } = require("mongoose").Types;
 const { managerCreate, managerUpdate, managerFind, managerFindOne, managerRemove } = require(path.resolve("src/db"))
 const { schema } = require(path.resolve("src/models"));
 const { Logger } = require(path.resolve('src/utils/logger'));
+const { buildSearchQuery } = require(path.resolve('src/utils/db.utils'));
 const _ = require("lodash"); // util module, for _.merge
 const log = new Logger("managerController", false).useEnvConfig().create();
 
@@ -25,11 +26,25 @@ async function createManager(req, res, next) {
 async function getManagers(req, res, next) {
     try {
         log.info(`${req.logPrefix}`);
-        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
+        
+        let searchData = {};
 
-        let ret = await managerFind({}, '-__v');
+        if (Object.keys(req.query).length > 0) {
+            log.unit(`${req.logPrefix} Applying query parameters: ` + JSON.stringify(req.query));
 
-        return res.status(200).json({ error: false, data: ret });
+            // @CHORE: 
+            // check if parameter keys are valid before moving on
+
+            // set as search parameter
+            searchData = buildSearchQuery(req.query);
+            log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));
+        };
+
+        let ret = await managerFind(searchData, '-__v');
+        let valuesFound = Object.keys(ret).length;
+        log.unit(`${req.logPrefix} Values returned: ${valuesFound}`);
+
+        return res.status(200).json({ error: false, valuesFound: valuesFound, data: ret });
     } catch (error) {
         return next(error)
     }

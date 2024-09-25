@@ -10,7 +10,7 @@ const { createManager, getManagers, getManagerById, updateManager, replaceManage
 
 router.post('/manager', createManager);         // Cria
 router.get('/manager', getManagers);            // Lista tudo, ou filtra (via query)
-router.get('/manager/:id', getManagerById);         // Lista um específico por id
+router.get('/manager/:id', getManagerById);     // Lista um específico por id
 router.patch('/manager/:id', updateManager);    // Corrige
 router.put('/manager/:id', replaceManager);     // Substitui
 router.delete('/manager/:id', deleteManager);   // Deleta
