@@ -15,7 +15,7 @@ async function createManager(req, res, next) {
 
         schema.zManager.parse(req.body);
         let ret = await managerCreate(req.body);
-        return res.status(200).json({ message: `Successfully created with id ${ret._id}` });
+        return res.status(200).json({ error: false, message: `Successfully created.`, data: ret._id });
     } catch (error) {
         return next(error)
     }
@@ -27,7 +27,9 @@ async function getManagers(req, res, next) {
         log.info(`${req.logPrefix}`);
         log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
 
-        return res.status(200).json(await managerFind({}, '-__v'));
+        let ret = await managerFind({}, '-__v');
+
+        return res.status(200).json({ error: false, data: ret });
     } catch (error) {
         return next(error)
     }
@@ -41,16 +43,16 @@ async function getManagerById(req, res, next) {
         
         // validando id
         const { id } = req.params;
-        if (!ObjectId.isValid(id)) { return res.status(404).json({ message: "Invalid id." }) }
+        if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
         // pega os dados in-db
         let returnedManager = await managerFindOne({ _id: id }, "-__v");
         log.unit(`${req.logPrefix} From database: ${JSON.stringify(returnedManager)}`);
         if (!returnedManager) {
-            return res.status(404).json({ message: 'Not found.' });
+            return res.status(404).json({ error: true, message: 'Not found.' });
         };
 
-        return res.status(200).json(returnedManager._doc);
+        return res.status(200).json({ error: false, data: returnedManager._doc});
     } catch (error) {
         return next(error)
     }
@@ -63,28 +65,28 @@ async function updateManager(req, res, next) {
         log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
         
         // valida se passou dados pra fazer a atualização
-        if (Object.keys(req.body).length === 0) { return res.status(400).json({ message: "No data to update."})}
+        if (Object.keys(req.body).length === 0) { return res.status(400).json({ error: true, message: "No data to update."})}
         
         // valida se o id é ao menos um ObjectId válido
         const { id } = req.params;
-        if (!ObjectId.isValid(id)) { return res.status(404).json({ message: "Invalid id." }) }
+        if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
         // valida se o campo que tá passando ao menos existe, pra eu não perder processamento atoa
         let validKeys = Object.keys(schema.zManager.shape);
         const hasInvalidKeys = Object.keys(req.body).some(key => !validKeys.includes(key));
         if (hasInvalidKeys) {
             return res.status(400).json({
-                error: 'Chaves inválidas no corpo da requisição.',
+                error: true,
+                message: 'Invalid keys in body.',
                 validKeys: validKeys
             });
         }
-        
 
         // pega os dados in-db
         let managerFromDatabase = await managerFindOne({ _id: id }, "-_id -__v");
         log.unit(`${req.logPrefix} From database: ${JSON.stringify(managerFromDatabase)}`);
         if (!managerFromDatabase) {
-            return res.status(404).json({ id: id });
+            return res.status(404).json({ error: true, message: 'Not found.' });
         };
 
         // corta createdAt e updatedAt
@@ -107,7 +109,7 @@ async function updateManager(req, res, next) {
         // nao faço ideia se isso pode ocorrer. se acontecer fica logado pelomenos
         if (!updReturn) { log.critical(`VALUES NOT UPDATED IN DATABASE`) }
 
-        return res.status(200).json({ message: 'Successfully updated' });
+        return res.status(200).json({ error: false, message: 'Successfully updated' });
     } catch (error) {
         next(error);
     }
@@ -120,18 +122,19 @@ async function replaceManager(req, res, next) {
         log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
         
         // valida se passou dados pra fazer a atualização
-        if (Object.keys(req.body).length === 0) { return res.status(400).json({ message: "No data to update."})}
+        if (Object.keys(req.body).length === 0) { return res.status(400).json({ error: true, message: "No data to update."})}
         
         // valida se o id é ao menos um ObjectId válido
         const { id } = req.params;
-        if (!ObjectId.isValid(id)) { return res.status(404).json({ message: "Invalid id." }) }
+        if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
         // valida se o campo que tá passando ao menos existe, pra eu não perder processamento atoa
         let validKeys = Object.keys(schema.zManager.shape);
         const hasInvalidKeys = Object.keys(req.body).some(key => !validKeys.includes(key));
         if (hasInvalidKeys) {
             return res.status(400).json({
-                error: 'Chaves inválidas no corpo da requisição.',
+                error: true,
+                message: 'Invalid keys in body.',
                 validKeys: validKeys
             });
         }
@@ -147,7 +150,7 @@ async function replaceManager(req, res, next) {
         // nao faço ideia se isso pode ocorrer. se acontecer fica logado pelomenos
         if (!updReturn) { log.critical(`VALUES NOT UPDATED IN DATABASE`) }
 
-        return res.status(200).json({ message: 'Successfully updated' });
+        return res.status(200).json({ error: false, message: 'Successfully updated.' });
     } catch (error) {
         next(error);
     }
@@ -161,10 +164,14 @@ async function deleteManager(req, res, next) {
 
         // valida se o id é ao menos um ObjectId válido
         const { id } = req.params;
-        if (!ObjectId.isValid(id)) { return res.status(404).json({ message: "Invalid id." }) }
+        if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
         let ret = await managerRemove(id);
-        res.status(200).json({ message: 'Successfully deleted' })
+        log.unit(`${req.logPrefix} Return from database: ${JSON.stringify(ret)}`)
+        if (ret?.deletedCount > 0) {
+            return res.status(200).json({ error: false, message: 'Successfully deleted.' })
+        }
+        return res.status(200).json({ error: false, message: "Does not exist." })
     } catch (error) {
         next(error);
     }
