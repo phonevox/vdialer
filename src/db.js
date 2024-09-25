@@ -39,17 +39,18 @@ async function managerRemove(id) {
     return query;
 };
 
-async function managerFind(searchQuery, selectString = '') {
+async function managerFindOne(searchQuery, selectString = '') {
     await connect();
     let query = Manager.findOne(searchQuery);
     let filtered = query.select(selectString);
     return filtered;
 }
 
-async function managerList() {
+async function managerFind(searchQuery, selectString = '') {
     await connect();
-    let query = Manager.find()
-    return query;
+    let query = Manager.find(searchQuery)
+    let filtered = query.select(selectString);
+    return filtered;
 }
 
 async function managerUpdate(id, newData) {
@@ -59,10 +60,10 @@ async function managerUpdate(id, newData) {
 }
 
 module.exports = {
-    managerList,
     managerCreate,
     managerUpdate,
     managerFind,
+    managerFindOne,
     managerRemove,
     isDatabaseConnected,
 }

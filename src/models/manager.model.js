@@ -8,13 +8,13 @@ const zManager = z.object({
     description: z.string().optional(),
     config: z.object({
         outbound_context: z.string().default("from-internal")
-    }),
+    }).strict(),
     auth: z.object({
         host: z.string(),
         port: z.number().default(5038),
         user: z.string(),
         password: z.string()
-    })
+    }).strict()
 });
 
 // ill try to use something to do zod-to-mongoose so i dont have to declare types twice
