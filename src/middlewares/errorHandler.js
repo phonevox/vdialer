@@ -24,7 +24,7 @@ const errorValidation = (err, req, res, next) => {
     if (err instanceof CastError) {
         log.trace(`[CAST ERROR] ${req.logPrefix} ${JSON.stringify(err)}`)
         log.warn(`[CAST ERROR] ${req.logPrefix} ${err.message}`) // provavelmente um id inválido na url
-        return res.status(500).json({ message: `Cast error para ${err.kind} falhou, para o valor ${err.stringValue}. Provavelmente é um id inválido sendo convertido para ObjectId. Consulte os logs para mais detalhes.` })
+        return res.status(500).json({ message: `Cast error para ${err.kind} falhou, para o valor ${err.stringValue}. Consulte os logs para mais detalhes.` })
     }
 
     if (err instanceof MongooseError) {

@@ -1,7 +1,7 @@
 #!/usr/bin/node
 const path = require("path");
 const { ObjectId } = require("mongoose").Types;
-const { managerCreate, managerUpdate, managerFind, managerFindOne, managerRemove } = require(path.resolve("src/db"))
+const { ManagerService } = require(path.resolve("src/db"))
 const { schema } = require(path.resolve("src/models"));
 const { Logger } = require(path.resolve('src/utils/logger'));
 const { buildSearchQuery } = require(path.resolve('src/utils/db.utils'));
@@ -15,7 +15,7 @@ async function createManager(req, res, next) {
         log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
 
         schema.zManager.parse(req.body);
-        let ret = await managerCreate(req.body);
+        let ret = await ManagerService.create(req.body);
         return res.status(200).json({ error: false, message: `Successfully created.`, data: ret._id });
     } catch (error) {
         return next(error)
@@ -40,7 +40,7 @@ async function getManagers(req, res, next) {
             log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));
         };
 
-        let ret = await managerFind(searchData, '-__v');
+        let ret = await ManagerService.find(searchData, '-__v');
         let valuesFound = Object.keys(ret).length;
         log.unit(`${req.logPrefix} Values returned: ${valuesFound}`);
 
@@ -61,13 +61,13 @@ async function getManagerById(req, res, next) {
         if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
         // pega os dados in-db
-        let returnedManager = await managerFindOne({ _id: id }, "-__v");
-        log.unit(`${req.logPrefix} From database: ${JSON.stringify(returnedManager)}`);
-        if (!returnedManager) {
+        let retFromDatabase = await ManagerService.findOne({ _id: id }, "-__v");
+        log.unit(`${req.logPrefix} From database: ${JSON.stringify(retFromDatabase)}`);
+        if (!retFromDatabase) {
             return res.status(404).json({ error: true, message: 'Not found.' });
         };
 
-        return res.status(200).json({ error: false, data: returnedManager._doc});
+        return res.status(200).json({ error: false, data: retFromDatabase._doc});
     } catch (error) {
         return next(error)
     }
@@ -98,9 +98,9 @@ async function updateManager(req, res, next) {
         }
 
         // pega os dados in-db
-        let managerFromDatabase = await managerFindOne({ _id: id }, "-_id -__v");
-        log.unit(`${req.logPrefix} From database: ${JSON.stringify(managerFromDatabase)}`);
-        if (!managerFromDatabase) {
+        let retFromDatabase = await ManagerService.findOne({ _id: id }, "-_id -__v");
+        log.unit(`${req.logPrefix} From database: ${JSON.stringify(retFromDatabase)}`);
+        if (!retFromDatabase) {
             return res.status(404).json({ error: true, message: 'Not found.' });
         };
 
@@ -108,18 +108,18 @@ async function updateManager(req, res, next) {
         // > vou testar sem cortar primeiro, se ficar errado eu att
 
         // monta o novo valor
-        log.unit(`Original value: ` + JSON.stringify(managerFromDatabase._doc));
+        log.unit(`Original value: ` + JSON.stringify(retFromDatabase._doc));
         log.unit(`Body (incoming patch): ` + JSON.stringify(req.body));
-        let managerPatched = _.merge({ ...managerFromDatabase._doc }, req.body);
-        log.unit(`Merged (patched) : ` + JSON.stringify(managerPatched))
+        let patchedDocument = _.merge({ ...retFromDatabase._doc }, req.body);
+        log.unit(`Merged (patched) : ` + JSON.stringify(patchedDocument))
 
         // dá parse pra ver se vai ficar tudo certo
-        log.unit(`Parsing the new values to check if its as expected by our database model. Values: ${JSON.stringify(managerPatched)}`)
-        schema.zManager.parse(managerPatched);
+        log.unit(`Parsing the new values to check if its as expected by our database model. Values: ${JSON.stringify(patchedDocument)}`)
+        schema.zManager.parse(patchedDocument);
 
         // estando tudo certo, manda pro db a alteração
         log.unit(`Values are valid, sending to database.`)
-        let updReturn = await managerUpdate(id, managerPatched);
+        let updReturn = await ManagerService.update(id, patchedDocument);
 
         // nao faço ideia se isso pode ocorrer. se acontecer fica logado pelomenos
         if (!updReturn) { log.critical(`VALUES NOT UPDATED IN DATABASE`) }
@@ -160,7 +160,7 @@ async function replaceManager(req, res, next) {
 
         // estando tudo certo, manda pro db a alteração
         log.unit(`Values are valid, sending to database.`)
-        let updReturn = await managerUpdate(id, req.body);
+        let updReturn = await ManagerService.update(id, req.body);
 
         // nao faço ideia se isso pode ocorrer. se acontecer fica logado pelomenos
         if (!updReturn) { log.critical(`VALUES NOT UPDATED IN DATABASE`) }
@@ -181,7 +181,7 @@ async function deleteManager(req, res, next) {
         const { id } = req.params;
         if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
-        let ret = await managerRemove(id);
+        let ret = await ManagerService.remove(id);
         log.unit(`${req.logPrefix} Return from database: ${JSON.stringify(ret)}`)
         if (ret?.deletedCount > 0) {
             return res.status(200).json({ error: false, message: 'Successfully deleted.' })
