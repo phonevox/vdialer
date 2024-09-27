@@ -28,101 +28,43 @@ class Database {
     }
 }
 
-class ManagerService {
-    constructor() {
-        console.log('constructed')
+class BaseDBService {
+    constructor(model) {
+        this.model = model;
     }
-    async create(manager) {
+
+    async create(data) {
         await Database.connect();
-        return Manager.create(manager);
+        return this.model.create(data);
     }
 
     async remove(id) {
         await Database.connect();
-        return Manager.deleteOne({ _id: id });
-    }
-
-    async findOne(searchQuery, selectString = '') {
-        await Database.connect();
-        return Manager.findOne(searchQuery).select(selectString);
-    }
-
-    async find(searchQuery, selectString = '') {
-        await Database.connect();
-        return Manager.find(searchQuery).select(selectString);
-    }
-
-    async update(id, newData) {
-        await Database.connect();
-        return Manager.findOneAndUpdate({ _id: id }, newData);
-    }
-}
-
-class CampaignService {
-    async create(campaign) {
-        await Database.connect();
-        log.info('Creating campaign: ')
-        log.info(campaign.config.inbound)
-        return Campaign.create(campaign);
-    }
-
-    async remove(id) {
-        await Database.connect();
-        return Campaign.deleteOne({ _id: id });
+        return this.model.deleteOne({ _id: id });
     }
 
     async findOne(searchQuery, selectString = '', lean = false) {
         await Database.connect();
-        let query = Campaign.findOne(searchQuery).select(selectString);
-        if (lean) { query = query.lean() };
-        return query
+        let query = this.model.findOne(searchQuery).select(selectString);
+        if (lean) query = query.lean();
+        return query;
     }
 
     async find(searchQuery, selectString = '') {
         await Database.connect();
-        return Campaign.find(searchQuery).select(selectString);
+        return this.model.find(searchQuery).select(selectString);
     }
 
     async update(id, newData) {
         await Database.connect();
-        return Campaign.findOneAndUpdate({ _id: id }, newData);
-    }
-}
-
-class CallService {
-    constructor() {
-        console.log('constructed')
-    }
-    async create(manager) {
-        await Database.connect();
-        return Manager.create(manager);
-    }
-
-    async remove(id) {
-        await Database.connect();
-        return Manager.deleteOne({ _id: id });
-    }
-
-    async findOne(searchQuery, selectString = '') {
-        await Database.connect();
-        return Manager.findOne(searchQuery).select(selectString);
-    }
-
-    async find(searchQuery, selectString = '') {
-        await Database.connect();
-        return Manager.find(searchQuery).select(selectString);
-    }
-
-    async update(id, newData) {
-        await Database.connect();
-        return Manager.findOneAndUpdate({ _id: id }, newData);
+        return this.model.findOneAndUpdate({ _id: id }, newData);
     }
 }
 
 // Exportando apenas o método isDatabaseConnected
 module.exports = {
-    ManagerService: new ManagerService(),
-    CampaignService: new CampaignService(),
-    CallService: new CallService(),
+    ManagerService: new BaseDBService(Manager),
+    CampaignService: new BaseDBService(Campaign),
+    CallService: new BaseDBService(Call),
     isDatabaseConnected: Database.isDatabaseConnected,
 };

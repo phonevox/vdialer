@@ -26,12 +26,12 @@ const CallSchema = new mongoose.Schema({
       default: null
     },
     campaign: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Campaign',
       required: true
     },
     manager: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Manager',
       required: true
     }
