@@ -130,47 +130,6 @@ async function updateCampaign(req, res, next) {
     }
 }
 
-// PUT :id
-async function replaceCampaign(req, res, next) {
-    try {
-        log.info(`${req.logPrefix}`)
-        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
-        
-        // valida se passou dados pra fazer a atualização
-        if (Object.keys(req.body).length === 0) { return res.status(400).json({ error: true, message: "No data to update."})}
-        
-        // valida se o id é ao menos um ObjectId válido
-        const { id } = req.params;
-        if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
-
-        // valida se o campo que tá passando ao menos existe, pra eu não perder processamento atoa
-        let validKeys = Object.keys(schema.zCampaign.shape);
-        const hasInvalidKeys = Object.keys(req.body).some(key => !validKeys.includes(key));
-        if (hasInvalidKeys) {
-            return res.status(400).json({
-                error: true,
-                message: 'Invalid keys in body.',
-                validKeys: validKeys
-            });
-        }
-
-        // dá parse pra ver se vai ficar tudo certo
-        log.unit(`Parsing the new values to check if its as expected by our database model. Values: ${JSON.stringify(req.body)}`)
-        schema.zCampaign.parse(req.body);
-
-        // estando tudo certo, manda pro db a alteração
-        log.unit(`Values are valid, sending to database.`)
-        let updReturn = await CampaignService.update(id, req.body);
-
-        // nao faço ideia se isso pode ocorrer. se acontecer fica logado pelomenos
-        if (!updReturn) { log.critical(`VALUES NOT UPDATED IN DATABASE`) }
-
-        return res.status(200).json({ error: false, message: 'Successfully updated.' });
-    } catch (error) {
-        next(error);
-    }
-}
-
 // DELETE :id
 async function deleteCampaign(req, res, next) {
     try {
@@ -197,6 +156,5 @@ module.exports = {
     getCampaigns,
     getCampaignById,
     updateCampaign,
-    replaceCampaign,
     deleteCampaign
 }
