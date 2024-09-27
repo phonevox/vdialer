@@ -1,12 +1,10 @@
 #!/usr/bin/node
 const path = require("path")
-require("dotenv").config({ path: path.resolve(`.env.${process.env.NODE_ENV || 'dev'}`)});
+require("dotenv").config({ path: path.resolve(`.env.${process.env.NODE_ENV || 'dev'}`) });
 const { Logger } = require(path.resolve('src/utils/logger'));
 const log = new Logger("database", false).useEnvConfig().create();
+const { model } = require(path.resolve("src/models"))
 const mongoose = require("mongoose");
-const { Manager } = require(path.resolve("src/models/manager.model"))
-const { Campaign } = require(path.resolve("src/models/campaign.model"))
-const { Call } = require(path.resolve("src/models/call.model"))
 
 let singleton;
 class Database {
@@ -28,7 +26,7 @@ class Database {
     }
 }
 
-class BaseDBService {
+class BaseModelService {
     constructor(model) {
         this.model = model;
     }
@@ -57,14 +55,43 @@ class BaseDBService {
 
     async update(id, newData) {
         await Database.connect();
+        console.log(newData)
         return this.model.findOneAndUpdate({ _id: id }, newData);
+    }
+}
+
+class ManagerService extends BaseModelService {
+    constructor(model) {
+        super(model);
+    }
+}
+
+class CampaignService extends BaseModelService {
+    constructor(model) {
+        super(model);
+    }
+}
+
+class CallService extends BaseModelService {
+    constructor(model) {
+        super(model);
+    }
+
+    async validateManagerId(id) {
+        await Database.connect();
+        return await model.Manager.exists({_id: id});
+    }
+
+    async validateCampaignId(id) {
+        await Database.connect();
+        return await model.Campaign.exists({_id: id});
     }
 }
 
 // Exportando apenas o método isDatabaseConnected
 module.exports = {
-    ManagerService: new BaseDBService(Manager),
-    CampaignService: new BaseDBService(Campaign),
-    CallService: new BaseDBService(Call),
+    ManagerService: new ManagerService(model.Manager),
+    CampaignService: new CampaignService(model.Campaign),
+    CallService: new CallService(model.Call),
     isDatabaseConnected: Database.isDatabaseConnected,
 };
