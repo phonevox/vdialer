@@ -6,6 +6,7 @@ const log = new Logger("database", false).useEnvConfig().create();
 const mongoose = require("mongoose");
 const { Manager } = require(path.resolve("src/models/manager.model"))
 const { Campaign } = require(path.resolve("src/models/campaign.model"))
+const { Call } = require(path.resolve("src/models/call.model"))
 
 let singleton;
 class Database {
@@ -88,9 +89,40 @@ class CampaignService {
     }
 }
 
+class CallService {
+    constructor() {
+        console.log('constructed')
+    }
+    async create(manager) {
+        await Database.connect();
+        return Manager.create(manager);
+    }
+
+    async remove(id) {
+        await Database.connect();
+        return Manager.deleteOne({ _id: id });
+    }
+
+    async findOne(searchQuery, selectString = '') {
+        await Database.connect();
+        return Manager.findOne(searchQuery).select(selectString);
+    }
+
+    async find(searchQuery, selectString = '') {
+        await Database.connect();
+        return Manager.find(searchQuery).select(selectString);
+    }
+
+    async update(id, newData) {
+        await Database.connect();
+        return Manager.findOneAndUpdate({ _id: id }, newData);
+    }
+}
+
 // Exportando apenas o método isDatabaseConnected
 module.exports = {
     ManagerService: new ManagerService(),
     CampaignService: new CampaignService(),
+    CallService: new CallService(),
     isDatabaseConnected: Database.isDatabaseConnected,
 };
