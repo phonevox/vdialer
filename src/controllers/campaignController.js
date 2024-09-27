@@ -61,13 +61,13 @@ async function getCampaignById(req, res, next) {
         if (!ObjectId.isValid(id)) { return res.status(404).json({ error: true, message: "Invalid id." }) }
 
         // pega os dados in-db
-        let retFromDatabase = await CampaignService.findOne({ _id: id }, "-__v");
+        let retFromDatabase = await CampaignService.findOne({ _id: id }, "-__v", true);
         log.unit(`${req.logPrefix} From database: ${JSON.stringify(retFromDatabase)}`);
         if (!retFromDatabase) {
             return res.status(404).json({ error: true, message: 'Not found.' });
         };
 
-        return res.status(200).json({ error: false, data: retFromDatabase._doc});
+        return res.status(200).json({ error: false, data: retFromDatabase});
     } catch (error) {
         return next(error)
     }
@@ -98,7 +98,7 @@ async function updateCampaign(req, res, next) {
         }
 
         // pega os dados in-db
-        let retFromDatabase = await CampaignService.findOne({ _id: id }, "-_id -__v");
+        let retFromDatabase = await CampaignService.findOne({ _id: id }, "-_id -__v", true);
         log.unit(`${req.logPrefix} From database: ${JSON.stringify(retFromDatabase)}`);
         if (!retFromDatabase) {
             return res.status(404).json({ error: true, message: 'Not found.' });
@@ -108,9 +108,9 @@ async function updateCampaign(req, res, next) {
         // > vou testar sem cortar primeiro, se ficar errado eu att
 
         // monta o novo valor
-        log.unit(`Original value: ` + JSON.stringify(retFromDatabase._doc));
+        log.unit(`Original value: ` + JSON.stringify(retFromDatabase)); // acho que o lean retorna o doc completo
         log.unit(`Body (incoming patch): ` + JSON.stringify(req.body));
-        let patchedDocument = _.merge({ ...retFromDatabase._doc }, req.body);
+        let patchedDocument = _.merge({ ...retFromDatabase }, req.body);
         log.unit(`Merged (patched) : ` + JSON.stringify(patchedDocument))
 
         // dá parse pra ver se vai ficar tudo certo

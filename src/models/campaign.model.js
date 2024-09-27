@@ -1,23 +1,6 @@
 #!/usr/bin/node
 const { z } = require("zod");
 const mongoose = require("mongoose");
-const { zodSchema } = require("@zodyac/zod-mongoose");
-
-// CAMPAIGN_SCHEMA.config.inbound.fagi
-const zSubschemaFagi = z.object({
-    protocol: z.string().default(undefined), // na real isso é obrigatório SE inbound.fagi for repassado
-    host: z.string().default(undefined), // na real isso é obrigatório SE inbound.fagi for repassado
-    port: z.number().min(1).max(65535).default(5038),
-    route: z.string().default(undefined), // na real isso é obrigatório SE inbound.fagi for repassado
-}).optional();
-
-
-// CAMPAIGN_SCHEMA.config.inbound.context
-const zSubschemaContext = z.object({
-    context: z.string().optional().default(undefined), // na real isso é obrigatório SE inbound.context for repassado
-    extension: z.string().optional().default(undefined), // na real isso é obrigatório SE inbound.context for repassado
-    priority: z.number().int().min(0).optional().default(1),
-}).optional();
 
 const zCampaign = z.object({
     name: z.string(),
@@ -25,66 +8,109 @@ const zCampaign = z.object({
     config: z.object({
         max_concurrent_calls: z.number().min(1),
         ringtime: z.number().min(0),
-        number_prefix: z.string().nullable(),
-        number_postfix: z.string().nullable(),
+        number_prefix: z.string().nullable().default(null),
+        number_postfix: z.string().nullable().default(null),
         inbound: z.object({
-            fagi: zSubschemaFagi.optional().nullable(),
-            context: zSubschemaContext.optional().nullable(),
-        }).refine(data => { 
-            // @WARNING
-            // Problema grande, vamos lá...
-            // Necessidade:
-            // 1: inbound recebe inbound.fagi XOR inbound.context (um dos dois, mas não ambos)
-            // 2: Caso receba inbound.context, os parametros context.context e context.extension são OBRIGATÓRIOS
-            // 3: Caso receba inbound.fagi, os parametros fagi.protocol, fagi.host e fagi.route são OBRIGATÓRIOS
-            // 4: Se eu deixar esses parâmetros obrigatórios, como, realmente obrigatórios no Zod
-            // o zod-mongoose vai criar um esquema no Mongoose onde inbound.fagi e inbound.context são AMBOS OBRIGATÓRIOS*
-            // (*na verdade não fagi e context em si, mas context.<param> e fagi.<param>, onde <param> não tem .default ou .optional)
-            // e já percebemos pelo ponto 1, que isso não é verdade: fagi pode existir, e context não, vice versa.
-            // 
-            // Consequentemente, por tal motivo:
-            // Eu faço os valores OBRIGATÓRIOS de inbound.fagi e inbound.context serem, por default, "null" ou "undefined"
-            // e manualmente refino-os abaixo.
-            // * nao me lembro da explicação completa pra essa parte, mas é baseado 
-            // nas necessidades citadas acima, e do fato do zod-mongoose não "respeitar" o .optional() de verdade (pra esse caso!)
-        
-            // tem ambos
-            if (data.fagi && data.context) {
-                return false;
-            }
-        
-            // tem fagi, faço parse pela fagi
-            if (data.fagi) {
-                const fagiValidation = zSubschemaFagi.safeParse(data.fagi);
-                if (!fagiValidation.success) { // parse falhou
-                    const errors = fagiValidation.error.errors;
-                    return errors.every(error => error.path.every(field => zSubschemaFagi.shape[field] !== undefined));
-                }
-            }
-        
-            // tem context, faço parse pelo context
-            if (data.context) {
-                const contextValidation = zSubschemaContext.safeParse(data.context);
-                if (!contextValidation.success) { // parse falhou
-                    const errors = contextValidation.error.errors;
-                    return errors.every(error => error.path.every(field => zSubschemaContext.shape[field] !== undefined));
-                }
-            }
-        
-            // nao tem nenhum, dou erro pq simplesmente faltou dados
-            if (!data.fagi && !data.context) {
-                return false;
-            }
-        
-            return true; // Validação bem-sucedida
+            fagi: z.object({
+                protocol: z.string(),
+                host: z.string(),
+                port: z.number().min(1).max(65535),
+                // port: z.number().min(1).max(65535).defult(5038),
+                route: z.string(),
+            }).nullable().default(null),
+            context: z.object({
+                context: z.string(),
+                extension: z.string(),
+                priority: z.number().int().min(0),
+            }).nullable().default(null)
+        }).refine(data => {
+            // inbound.fagi XOR inbound.context
+            // @FIXME: É verificado primeiro os requireds, e depois se há ambos
+            const hasFagi = data.fagi !== null;
+            const hasContext = data.context !== null;
+            return hasFagi !== hasContext;
         }, {
-            message: "Refine: Use only one inbound type",
-        }),
+            message: "'fagi' XOR 'context'",
+        }), // não quero novos
     }).strict()
 });
 
-const CampaignSchema = zodSchema(zCampaign, { timestamps: true }); // zod-to-mongoose
-console.log(CampaignSchema)
+const CampaignSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    config: {
+        max_concurrent_calls: {
+            type: Number,
+            min: 1,
+            required: true
+        },
+        ringtime: {
+            type: Number,
+            min: 0,
+            required: true
+        },
+        number_prefix: {
+            type: String,
+            default: null
+        },
+        number_postfix: {
+            type: String,
+            default: null
+        },
+        inbound: {
+            fagi: {
+                type: new mongoose.Schema({
+                    protocol: {
+                        type: String,
+                        required: true
+                    },
+                    host: {
+                        type: String,
+                        required: true
+                    },
+                    port: {
+                        type: Number,
+                        min: 1,
+                        max: 65535,
+                        default: 5038
+                    },
+                    route: {
+                        type: String,
+                        required: true
+                    }
+                }, { _id: false }),
+                default: null
+            },
+            context: {
+                type: new mongoose.Schema({
+                    context: {
+                        type: String,
+                        required: true
+                    },
+                    extension: {
+                        type: String,
+                        required: true
+                    },
+                    priority: {
+                        type: Number,
+                        min: 0,
+                        default: 1
+                    }
+                }, { _id: false }),
+                default: null
+            }
+        }
+    }
+}, {
+    strict: true
+});
+
 const Campaign = mongoose.model("Campaign", CampaignSchema);
 
 module.exports = {

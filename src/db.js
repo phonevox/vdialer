@@ -60,6 +60,8 @@ class ManagerService {
 class CampaignService {
     async create(campaign) {
         await Database.connect();
+        log.info('Creating campaign: ')
+        log.info(campaign.config.inbound)
         return Campaign.create(campaign);
     }
 
@@ -68,9 +70,11 @@ class CampaignService {
         return Campaign.deleteOne({ _id: id });
     }
 
-    async findOne(searchQuery, selectString = '') {
+    async findOne(searchQuery, selectString = '', lean = false) {
         await Database.connect();
-        return Campaign.findOne(searchQuery).select(selectString);
+        let query = Campaign.findOne(searchQuery).select(selectString);
+        if (lean) { query = query.lean() };
+        return query
     }
 
     async find(searchQuery, selectString = '') {
