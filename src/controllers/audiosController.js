@@ -10,12 +10,16 @@ async function servePublicAudios(req, res, next) {
         if (err) {
             log.error(`${req.logPrefix} Error serving file "${req.params.filename}": probably doesn't exist.`, err);
             log.trace(`${req.logPrefix} Audio file path: ${audioFilePath}`);
-            res.status(404).send("Audio not found");
+            res.status(404).send({
+                error: true,
+                message: "Audio not found."
+            });
         } else {
             log.info(`${req.logPrefix} Serving audio file "${req.params.filename}".`);
             log.trace(`${req.logPrefix} Audio file path: ${audioFilePath}`);
         }
     });
+
 }
 
 module.exports = {

@@ -54,7 +54,8 @@ function createToken(userId) {
 async function login(req, res, next) {
 
     // password é obrigatório. o user pode vir como username ou email
-    const { username, password } = req.body
+    let { username, password } = req.body
+    username = username.toLowerCase()
 
     // caso contenha @ no username, consideramos que seja um email
     const searchCriteria = username.includes('@') ? { email: username } : { username: username };
@@ -65,13 +66,19 @@ async function login(req, res, next) {
     const userId = String(dbRes?._id)
     if (!dbRes || !userId) {
         log.info(`${req.logPrefix} Failed authentication for user "${username}": user not found`);
-        return res.status(401).json({ error: true, message: `Authentication failed` })
+        return res.status(401).json({
+            error: true,
+            message: `Authentication failed.`
+        })
     }
 
     // validating sent password with user's password
     if (!bcrypt.compareSync(password, userEncryptedPassword)) {
         log.info(`${req.logPrefix} Failed authentication for user "${username}": wrong password`)
-        return res.status(401).json({ error: true, message: `Authentication failed` }) // dont be verbose about error, could be used to scan for existing users on our database. verbose it in log
+        return res.status(401).json({
+            error: true,
+            message: `Authentication failed.`
+        }) // dont be verbose about error, could be used to scan for existing users on our database. verbose it in log
     }
 
     // authenticating
@@ -84,7 +91,14 @@ async function login(req, res, next) {
     // e apenas permitir este último token "atualizado"
     // porém não vejo valia nisso no momento. cuide do seu token.
 
-    return res.status(200).json({ error: false, message: "Authentication successful", data: { access_token: accessToken, refresh_token: refreshToken } });
+    return res.status(200).json({
+        error: false,
+        message: "Authentication successful.",
+        data: {
+            access_token: accessToken,
+            refresh_token: refreshToken
+        }
+    });
 }
 
 async function refresh(req, res, next) {
@@ -92,7 +106,10 @@ async function refresh(req, res, next) {
 
     if (!token) {
         log.warn(`${req.logPrefix} Refresh token not provided`);
-        return res.status(401).json({ error: true, message: 'Refresh token is required' });
+        return res.status(401).json({
+            error: true,
+            message: 'Refresh token is required.'
+        });
     }
 
     const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || DEFAULT_REFRESH_TOKEN_SECRET;
@@ -101,7 +118,10 @@ async function refresh(req, res, next) {
     jwt.verify(token, refreshTokenSecret, async (err, decoded) => {
         if (err) {
             log.warn(`${req.logPrefix} Invalid refresh token`);
-            return res.status(403).json({ error: true, message: 'Invalid refresh token' });
+            return res.status(403).json({
+                error: true,
+                message: 'Invalid refresh token.'
+            });
         }
 
         const userId = decoded.userId;
@@ -110,7 +130,10 @@ async function refresh(req, res, next) {
         const dbRes = await UserService.findOne({ _id: userId });
         if (!dbRes || !String(dbRes._id)) {
             log.warn(`${req.logPrefix} Refresh token used for non-existent user ID: ${userId}`);
-            return res.status(403).json({ error: true, message: 'User not found' });
+            return res.status(403).json({
+                error: true,
+                message: 'User not found.'
+            });
         }
 
         // Gerar um novo access token
@@ -119,8 +142,10 @@ async function refresh(req, res, next) {
 
         return res.status(200).json({
             error: false,
-            message: 'Refresh successful',
-            data: { access_token: newAccessToken }
+            message: 'Refresh successful.',
+            data: {
+                access_token: newAccessToken
+            }
         });
     });
 }
