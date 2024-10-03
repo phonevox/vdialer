@@ -55,7 +55,7 @@ class BaseModelService {
 
     async update(id, newData) {
         await Database.connect();
-        console.log(newData)
+        log.debug(newData)
         return this.model.findOneAndUpdate({ _id: id }, newData);
     }
 }
@@ -88,10 +88,16 @@ class CallService extends BaseModelService {
     }
 }
 
-// Exportando apenas o método isDatabaseConnected
+class UserService extends BaseModelService {
+    constructor(model) {
+        super(model);
+    }
+}
+
 module.exports = {
     ManagerService: new ManagerService(model.Manager),
     CampaignService: new CampaignService(model.Campaign),
     CallService: new CallService(model.Call),
+    UserService: new UserService(model.User),
     isDatabaseConnected: Database.isDatabaseConnected,
 };

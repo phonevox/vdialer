@@ -1,5 +1,6 @@
 #!/usr/bin/node
 const path = require("path");
+const { bcryptPassword } = require(path.resolve('src/utils'));
 const { Logger } = require(path.resolve("src/utils/logger"));
 const log = new Logger("middlewares.utility", false).useEnvConfig().create();
 
@@ -39,8 +40,19 @@ const setLogPrefix = (req, res, next) => {
     next()
 };
 
+const securePasswords = async (req, res, next) => {
+    const SALT_ROUNDS = 10;
+
+    // se tem algum campo com password no body, imediatamente encripta antes de prosseguir
+    if (req.body.password) {
+        req.body.password = await bcryptPassword(req.body.password, SALT_ROUNDS);
+    }
+    next();
+}
+
 module.exports = {
     setLogPrefix,
     getClientIp,
-    expects
+    expects,
+    securePasswords
 }

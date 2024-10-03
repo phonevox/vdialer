@@ -14,6 +14,7 @@ const audiosRoute = require(path.resolve('src/routes/audiosRoutes'));
 const callRoutes = require(path.resolve('src/routes/api/callRoutes'));
 const campaignRoutes = require(path.resolve('src/routes/api/campaignRoutes'));
 const managerRoutes = require(path.resolve('src/routes/api/managerRoutes'));
+const userRoutes = require(path.resolve('src/routes/admin/userRoutes'));
 
 // Inicializando as rotas do Express
 const app = express();
@@ -25,6 +26,7 @@ app.use('/', audiosRoute);
 app.use('/vdialer/api', callRoutes); // Faço as chamadas. Repasso os "afazeres" e o servidor em que executará
 app.use('/vdialer/api', campaignRoutes); // Registro os "afazeres"
 app.use('/vdialer/api', managerRoutes); // Registro os servidores
+app.use('/vdialer/admin', userRoutes); // Manipulação de usuários
 
 app.use(errorValidation);
 

@@ -5,7 +5,7 @@ const log = new Logger("middlewares", false).useEnvConfig().create();
 
 const { errorValidation } = require(path.resolve("src/middlewares/errorHandler"));
 const { ratelimit_auth, ratelimit_route } = require(path.resolve("src/middlewares/ratelimit"));
-const { setLogPrefix, getClientIp, expects } = require(path.resolve("src/middlewares/utility"));
+const { setLogPrefix, getClientIp, expects, securePasswords } = require(path.resolve("src/middlewares/utility"));
 
 module.exports = {
     errorValidation, 
@@ -13,5 +13,6 @@ module.exports = {
     ratelimit_route,
     setLogPrefix, 
     getClientIp, 
-    expects
+    expects,
+    securePasswords
 }
