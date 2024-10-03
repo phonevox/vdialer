@@ -40,6 +40,8 @@ async function getUsers(req, res, next) {
             // @CHORE: 
             // check if parameter keys are valid before moving on
 
+            // NÃO, você NÃO PODE pesquisar por SENHA. Eu NÃO VOU implementar isso.
+
             // set as search parameter
             searchData = buildSearchQuery(req.query);
             log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));

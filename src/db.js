@@ -50,6 +50,7 @@ class BaseModelService {
 
     async find(searchQuery, selectString = '') {
         await Database.connect();
+        console.log('searching: ' + JSON.stringify(searchQuery))
         return this.model.find(searchQuery).select(selectString);
     }
 
