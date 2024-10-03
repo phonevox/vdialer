@@ -4,12 +4,12 @@ const express = require('express');
 const router = express.Router();
 
 // controllers
-const { createCampaign, getCampaigns, getCampaignById, updateCampaign, replaceCampaign, deleteCampaign } = require(path.resolve("src/controllers/campaignController"))
+const { CampaignController: Controller } = require(path.resolve("src/controllers/campaignController"))
 
-router.post('/campaign', createCampaign);         // Cria
-router.get('/campaign', getCampaigns);            // Lista tudo, ou filtra (via query)
-router.get('/campaign/:id', getCampaignById);     // Lista um específico por id
-router.patch('/campaign/:id', updateCampaign);    // Corrige
-router.delete('/campaign/:id', deleteCampaign);   // Deleta
+router.post('/campaign', Controller.create);         // Cria
+router.get('/campaign', Controller.get);            // Lista tudo, ou filtra (via query)
+router.get('/campaign/:id', Controller.getById);     // Lista um específico por id
+router.patch('/campaign/:id', Controller.update);    // Corrige
+router.delete('/campaign/:id', Controller.delete);   // Deleta
 
 module.exports = router;

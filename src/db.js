@@ -33,31 +33,108 @@ class BaseModelService {
 
     async create(data) {
         await Database.connect();
-        return this.model.create(data);
+        try {
+            const ret = await this.model.create(data);
+            return {
+                error: false,
+                message: "Successfully created.",
+                data: { id: ret._id }
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message,
+            };
+        }
     }
 
     async remove(id) {
         await Database.connect();
-        return this.model.deleteOne({ _id: id });
+        try {
+            const result = await this.model.deleteOne({ _id: id });
+            if (result.deletedCount > 0) {
+                return {
+                    error: false,
+                    message: "Successfully removed.",
+                    data: result
+                };
+            }
+            return {
+                error: false,
+                message: "Does not exist.",
+                data: result
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message
+            };
+        }
     }
 
     async findOne(searchQuery, selectString = '', lean = false) {
         await Database.connect();
-        let query = this.model.findOne(searchQuery).select(selectString);
-        if (lean) query = query.lean();
-        return query;
+        try {
+            let query = this.model.findOne(searchQuery).select(selectString);
+            if (lean) query = query.lean();
+            const result = await query;
+            if (!result) {
+                return {
+                    error: true,
+                    message: "No document found."
+                };
+            }
+            return {
+                error: false,
+                message: "Document found.",
+                data: result
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message
+            };
+        }
     }
 
     async find(searchQuery, selectString = '') {
         await Database.connect();
-        console.log('searching: ' + JSON.stringify(searchQuery))
-        return this.model.find(searchQuery).select(selectString);
+        try {
+            const results = await this.model.find(searchQuery).select(selectString);
+            return {
+                error: false,
+                message: results.length ? "Documents found." : "No documents found.",
+                data: results
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message
+            };
+        }
     }
 
     async update(id, newData) {
         await Database.connect();
-        log.debug(newData)
-        return this.model.findOneAndUpdate({ _id: id }, newData);
+        try {
+            const result = await this.model.findOneAndUpdate({ _id: id }, newData, { new: true });
+            if (!result) {
+                return {
+                    error: true,
+                    message: "No document found to update."
+                };
+            }
+            return {
+                error: false,
+                message: "Successfully updated.",
+                data: result
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message
+            };
+        }
     }
 }
 
@@ -80,12 +157,34 @@ class CallService extends BaseModelService {
 
     async validateManagerId(id) {
         await Database.connect();
-        return await model.Manager.exists({_id: id});
+        try {
+            const exists = await model.Manager.exists({ _id: id });
+            return {
+                error: !exists,
+                message: exists ? "Manager ID is valid." : "Manager ID does not exist."
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message
+            };
+        }
     }
 
     async validateCampaignId(id) {
         await Database.connect();
-        return await model.Campaign.exists({_id: id});
+        try {
+            const exists = await model.Campaign.exists({ _id: id });
+            return {
+                error: !exists,
+                message: exists ? "Campaign ID is valid." : "Campaign ID does not exist."
+            };
+        } catch (error) {
+            return {
+                error: true,
+                message: error.message
+            };
+        }
     }
 }
 
@@ -93,6 +192,31 @@ class UserService extends BaseModelService {
     constructor(model) {
         super(model);
     }
+
+    // substituindo o método create de BaseModelService
+    async create(data) {
+        await Database.connect();
+        try {
+            const ret = await this.model.create(data);
+            return {
+                error: false,
+                message: "Successfully created.",
+                data: { id: ret._id }
+            };
+        } catch (error) {
+            if (error.code === 11000) { // duplicate keys error on create (needs unique:true on schema)
+                return {
+                    error: true,
+                    message: `Duplicate value: ${Object.keys(error.keyValue)[0]} already exists.`
+                };
+            }
+            return {
+                error: true,
+                message: error.message
+            };
+        }
+    }
+
 }
 
 module.exports = {

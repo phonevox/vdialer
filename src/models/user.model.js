@@ -1,23 +1,24 @@
 #!/usr/bin/node
 const { z } = require("zod");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 
 const zUser = z.object({
-    username: z.string(),
-    email: z.string().email().optional(),
+    username: z.string().unique(),
+    email: z.string().email().unique().optional(),
     password: z.string().min(8),
 });
 
 const UserSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     email: {
         type: String,
         match: [/.+\@.+\..+/, 'Invalid email format'],
-        required: false
+        required: true,
+        unique: true
     },
     password: {
         type: String,
@@ -29,6 +30,7 @@ const UserSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", UserSchema);
+// (async () => { await User.syncIndexes()})();
 
 module.exports = {
     User,

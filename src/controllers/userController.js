@@ -14,7 +14,6 @@ const _ = require("lodash"); // util module, for _.merge
 async function createUser(req, res, next) {
     try {
         log.info(`${req.logPrefix}`);
-        log.trace(`${req.logPrefix} ${JSON.stringify(req.body)}`);
 
         schema.zUser.parse(req.body);
 
@@ -25,11 +24,18 @@ async function createUser(req, res, next) {
         }
 
         let ret = await UserService.create(req.body);
+        if (ret.error) {
+            log.warn(`${req.logPrefix} Failed to create user: ${ret.message}`);
+            return res.status(400).json({
+                error: true,
+                message: ret.message
+            });
+        }
 
         return res.status(200).json({
             error: false,
             message: `Successfully created.`,
-            data: ret._id
+            data: ret.data.id
         });
 
     } catch (error) {
@@ -42,8 +48,8 @@ async function getUsers(req, res, next) {
     try {
         log.info(`${req.logPrefix}`);
 
+        // aplicando os parametros de pesquisa direto dos queryparams
         let searchData = {};
-
         if (Object.keys(req.query).length > 0) {
             log.unit(`${req.logPrefix} Applying query parameters: ` + JSON.stringify(req.query));
 
@@ -53,18 +59,18 @@ async function getUsers(req, res, next) {
             // NÃO, você NÃO PODE pesquisar por SENHA. Eu NÃO VOU implementar isso.
 
             // set as search parameter
-            searchData = buildSearchQuery(req.query);
+            searchData = buildSearchQuery(req.query); // pra transformar em regex
             log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));
         };
 
         let ret = await UserService.find(searchData, '-__v');
-        let valuesFound = Object.keys(ret).length;
+        let valuesFound = Object.keys(ret.data).length;
         log.unit(`${req.logPrefix} Values returned: ${valuesFound}`);
 
         return res.status(200).json({
             error: false,
             valuesFound: valuesFound,
-            data: ret
+            data: ret.data
         });
     } catch (error) {
         return next(error)
@@ -87,9 +93,8 @@ async function getUserById(req, res, next) {
         }
 
         // pega os dados in-db
-        let retFromDatabase = await UserService.findOne({ _id: id }, "-__v", true);
-        log.unit(`${req.logPrefix} From database: ${JSON.stringify(retFromDatabase)}`);
-        if (!retFromDatabase) {
+        let ret = await UserService.findOne({ _id: id }, "-__v", true);
+        if (!ret.data) {
             return res.status(404).json({
                 error: true,
                 message: 'Not found.'
@@ -98,7 +103,7 @@ async function getUserById(req, res, next) {
 
         return res.status(200).json({
             error: false,
-            data: retFromDatabase
+            data: ret.data
         });
     } catch (error) {
         return next(error)
@@ -139,9 +144,9 @@ async function updateUser(req, res, next) {
         }
 
         // pega os dados in-db
-        let retFromDatabase = await UserService.findOne({ _id: id }, "-_id -__v", true);
-        log.unit(`${req.logPrefix} From database: ${JSON.stringify(retFromDatabase)}`);
-        if (!retFromDatabase) {
+        let ret = await UserService.findOne({ _id: id }, "-_id -__v", true);
+        log.unit(`${req.logPrefix} From database: ${JSON.stringify(ret.data)}`);
+        if (!ret.data) {
             return res.status(404).json({
                 error: true,
                 message: 'Not found.'
@@ -152,9 +157,9 @@ async function updateUser(req, res, next) {
         // > vou testar sem cortar primeiro, se ficar errado eu att
 
         // monta o novo valor
-        log.unit(`Original value: ` + JSON.stringify(retFromDatabase)); // acho que o lean retorna o doc completo
+        log.unit(`Original value: ` + JSON.stringify(ret.data)); // acho que o lean retorna o doc completo
         log.unit(`Body (incoming patch): ` + JSON.stringify(req.body));
-        let patchedDocument = _.merge({ ...retFromDatabase }, req.body);
+        let patchedDocument = _.merge({ ...ret.data }, req.body);
         log.unit(`Merged (patched) : ` + JSON.stringify(patchedDocument))
 
         // dá parse pra ver se vai ficar tudo certo
@@ -195,16 +200,18 @@ async function deleteUser(req, res, next) {
 
         let ret = await UserService.remove(id);
         log.unit(`${req.logPrefix} Return from database: ${JSON.stringify(ret)}`)
-        if (ret?.deletedCount > 0) {
-            return res.status(200).json({
-                error: false,
-                message: 'Successfully deleted.'
-            })
+        if (ret.error) {
+            return res.status(400).json({
+                error: true,
+                message: ret.message
+            });
         }
+
         return res.status(200).json({
             error: false,
-            message: "Does not exist."
-        })
+            message: 'Successfully deleted.'
+        });
+
     } catch (error) {
         next(error);
     }
