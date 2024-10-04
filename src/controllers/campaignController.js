@@ -7,8 +7,8 @@ const log = new Logger("campaignController", false).useEnvConfig().create();
 const BaseController = require(path.resolve("src/controllers/baseController"));
 
 class CampaignController extends BaseController {
-    constructor(service, schema, logger) {
-        super(service, schema, logger);
+    constructor(ControllerService, schema, logger) {
+        super(ControllerService, schema, logger);
     };
 }
 

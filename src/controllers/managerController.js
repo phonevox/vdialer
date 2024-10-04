@@ -7,8 +7,8 @@ const log = new Logger("managerController", false).useEnvConfig().create();
 const BaseController = require(path.resolve("src/controllers/baseController"));
 
 class ManagerController extends BaseController {
-    constructor(service, schema, logger) {
-        super(service, schema, logger);
+    constructor(ControllerService, schema, logger) {
+        super(ControllerService, schema, logger);
     };
 }
 

@@ -1,14 +1,16 @@
 const path = require("path");
 const { buildSearchQuery } = require(path.resolve('src/utils/db.utils'));
-const { schema } = require(path.resolve("src/models"));
 const { ObjectId } = require("mongoose").Types; // to check mongoose type
 const _ = require("lodash"); // util module, for _.merge
 
 class BaseController {
-    constructor(service, schema, logger) {
-        this.ControllerService = service;
+    constructor(ControllerService, schema, log, hooks = {}) {
+        this.ControllerService = ControllerService;
         this.schema = schema;
-        this.log = logger;
+        this.log = log;
+        this.hooks = hooks;
+        // hook:before<action>(req, res, next)
+        // hook:after<action>(req, res, next, ret)
     };
 
     // POST
@@ -16,7 +18,13 @@ class BaseController {
         try {
             this.log.info(`${req.logPrefix}`);
             this.schema.parse(req.body);
+
+            if (this.hooks.beforeCreate) { await this.hooks.beforeCreate(req, res, next) };
+
             let ret = await this.ControllerService.create(req.body);
+
+            if (this.hooks.afterCreate) { await this.hooks.afterCreate(req, res, next, ret) };
+
             return res.status(200).json({
                 error: false,
                 message: `Successfully created.`,
@@ -41,10 +49,15 @@ class BaseController {
 
                 // set as search parameter
                 searchData = buildSearchQuery(req.query);
-                log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));
+                this.log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));
             };
 
+            if (this.hooks.beforeGet) { await this.hooks.beforeGet(req, res, next) };
+
             let ret = await this.ControllerService.find(searchData, '-__v');
+
+            if (this.hooks.afterGet) { await this.hooks.afterGet(req, res, next, ret) };
+
             let valFound = Object.keys(ret.data).length;
             this.log.unit(`${req.logPrefix} Values returned: ${valFound}`);
 
@@ -72,8 +85,13 @@ class BaseController {
                 })
             }
 
+            if (this.hooks.beforeGetById) { await this.hooks.beforeGetById(req, res, next) };
+
             // pegando os dados no database
             let ret = await this.ControllerService.findOne({ _id: id }, '-__v');
+
+            if (this.hooks.afterGetById) { await this.hooks.afterGetById(req, res, next, ret) };
+
             this.log.unit(`${req.logPrefix} From database: ${JSON.stringify(ret.data)}`);
             if (!ret.data) {
                 return res.status(404).json({
@@ -123,8 +141,13 @@ class BaseController {
                 });
             }
 
+            if (this.hooks.beforeUpdate) { await this.hooks.beforeUpdate(req, res, next) };
+
             // pegando os dados do database
             let ret = await this.ControllerService.findOne({ _id: id }, '-__v');
+
+            if (this.hooks.afterUpdate) { await this.hooks.afterUpdate(req, res, next, ret) };
+
             this.log.unit(`${req.logPrefix} From database: ${JSON.stringify(ret.data)}`);
             if (!ret.data) {
                 return res.status(404).json({
@@ -175,8 +198,13 @@ class BaseController {
                 });
             };
 
+            if (this.hooks.beforeDelete) { await this.hooks.beforeDelete(req, res, next) };
+
             // removendo
             let ret = await this.ControllerService.remove(id);
+
+            if (this.hooks.afterDelete) { await this.hooks.afterDelete(req, res, next, ret) };
+
             if (ret.error) {
                 return res.status(400).json({
                     error: true,
