@@ -11,6 +11,8 @@ class BaseController {
         this.hooks = hooks;
         // hook:before<action>(req, res, next)
         // hook:after<action>(req, res, next, ret)
+        // if hook succeeded, DO NOT return anything.
+        // if hook failed, return something to stop processing (ideally a res (response))
     };
 
     // POST
@@ -19,11 +21,18 @@ class BaseController {
             this.log.info(`${req.logPrefix}`);
             this.schema.parse(req.body);
 
-            if (this.hooks.beforeCreate) { await this.hooks.beforeCreate(req, res, next) };
+            if (this.hooks.beforeCreate) { if (await this.hooks.beforeCreate(req, res, next)) return };
 
             let ret = await this.ControllerService.create(req.body);
 
-            if (this.hooks.afterCreate) { await this.hooks.afterCreate(req, res, next, ret) };
+            if (this.hooks.afterCreate) { if (await this.hooks.afterCreate(req, res, next, ret)) return };
+
+            if (ret.error) {
+                return res.status(400).json({
+                    error: true,
+                    message: ret.message
+                });
+            }
 
             return res.status(200).json({
                 error: false,
@@ -52,11 +61,11 @@ class BaseController {
                 this.log.unit(`Search data for mongoose: ` + JSON.stringify(searchData));
             };
 
-            if (this.hooks.beforeGet) { await this.hooks.beforeGet(req, res, next) };
+            if (this.hooks.beforeGet) { if (await this.hooks.beforeGet(req, res, next)) return };
 
             let ret = await this.ControllerService.find(searchData, '-__v');
 
-            if (this.hooks.afterGet) { await this.hooks.afterGet(req, res, next, ret) };
+            if (this.hooks.afterGet) { if (await this.hooks.afterGet(req, res, next, ret)) return };
 
             let valFound = Object.keys(ret.data).length;
             this.log.unit(`${req.logPrefix} Values returned: ${valFound}`);
@@ -85,12 +94,12 @@ class BaseController {
                 })
             }
 
-            if (this.hooks.beforeGetById) { await this.hooks.beforeGetById(req, res, next) };
+            if (this.hooks.beforeGetById) { if (await this.hooks.beforeGetById(req, res, next)) return };
 
             // pegando os dados no database
             let ret = await this.ControllerService.findOne({ _id: id }, '-__v');
 
-            if (this.hooks.afterGetById) { await this.hooks.afterGetById(req, res, next, ret) };
+            if (this.hooks.afterGetById) { if (await this.hooks.afterGetById(req, res, next, ret)) return };
 
             this.log.unit(`${req.logPrefix} From database: ${JSON.stringify(ret.data)}`);
             if (!ret.data) {
@@ -141,12 +150,12 @@ class BaseController {
                 });
             }
 
-            if (this.hooks.beforeUpdate) { await this.hooks.beforeUpdate(req, res, next) };
+            if (this.hooks.beforeUpdate) { if (await this.hooks.beforeUpdate(req, res, next)) return };
 
             // pegando os dados do database
             let ret = await this.ControllerService.findOne({ _id: id }, '-__v');
 
-            if (this.hooks.afterUpdate) { await this.hooks.afterUpdate(req, res, next, ret) };
+            if (this.hooks.afterUpdate) { if (await this.hooks.afterUpdate(req, res, next, ret)) return };
 
             this.log.unit(`${req.logPrefix} From database: ${JSON.stringify(ret.data)}`);
             if (!ret.data) {
@@ -198,12 +207,12 @@ class BaseController {
                 });
             };
 
-            if (this.hooks.beforeDelete) { await this.hooks.beforeDelete(req, res, next) };
+            if (this.hooks.beforeDelete) { if (await this.hooks.beforeDelete(req, res, next)) return };
 
             // removendo
             let ret = await this.ControllerService.remove(id);
 
-            if (this.hooks.afterDelete) { await this.hooks.afterDelete(req, res, next, ret) };
+            if (this.hooks.afterDelete) { if (await this.hooks.afterDelete(req, res, next, ret)) return };
 
             if (ret.error) {
                 return res.status(400).json({

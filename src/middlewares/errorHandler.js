@@ -18,11 +18,12 @@ const errorValidation = (err, req, res, next) => {
     if (isZodError(err)) {
         const validationError = fromError(err);
         log.debug(`[VALIDATE ERROR] ${req.logPrefix} ${validationError.toString()}`);
+        // log.trace(`[VALIDATE ERROR] ${err.stack}`)
         return res.status(400).json({ error: validationError.toString() });
     }
 
     if (err instanceof CastError) {
-        log.trace(`[CAST ERROR] ${req.logPrefix} ${JSON.stringify(err)}`)
+        log.trace(`[CAST ERROR] ${req.logPrefix} ${err.stack}`)
         log.warn(`[CAST ERROR] ${req.logPrefix} ${err.message}`) // provavelmente um id inválido na url
         return res.status(500).json({ message: `Cast error para ${err.kind} falhou, para o valor ${err.stringValue}. Consulte os logs para mais detalhes.` })
     }
@@ -33,11 +34,11 @@ const errorValidation = (err, req, res, next) => {
             log.critical(`[MONGOOSE ERROR] Database is not connected!`);
         }
 
-        log.critical(`[MONGOOSE ERROR] ${req.logPrefix} ${err}`)
+        log.critical(`[MONGOOSE ERROR] ${req.logPrefix} ${err.stack}`)
         return res.status(500).json({ message: 'Erro interno com o database, tente novamente mais tarde!' });
     }
 
-    log.critical(`[GENERIC ERROR] ${req.logPrefix} ${err}`)
+    log.critical(`[GENERIC ERROR] ${req.logPrefix} ${err.stack}`)
     return res.status(500).json({ message: 'Erro interno, tente novamente mais tarde!' });
 };
 

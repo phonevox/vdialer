@@ -41,6 +41,7 @@ class BaseModelService {
                 data: { id: ret._id }
             };
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message,
@@ -65,6 +66,7 @@ class BaseModelService {
                 data: result
             };
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message
@@ -90,6 +92,7 @@ class BaseModelService {
                 data: result
             };
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message
@@ -107,6 +110,7 @@ class BaseModelService {
                 data: results
             };
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message
@@ -130,6 +134,7 @@ class BaseModelService {
                 data: result
             };
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message
@@ -155,15 +160,19 @@ class CallService extends BaseModelService {
         super(model);
     }
 
-    async validateManagerId(id) {
+    async isValidManager(id) {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return false;
+        }
+
         await Database.connect();
         try {
             const exists = await model.Manager.exists({ _id: id });
-            return {
-                error: !exists,
-                message: exists ? "Manager ID is valid." : "Manager ID does not exist."
-            };
+            console.log('Manager exists ? : ', exists);
+            console.log(' !!exists : ', !!exists);
+            return exists ? true : false;
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message
@@ -171,15 +180,18 @@ class CallService extends BaseModelService {
         }
     }
 
-    async validateCampaignId(id) {
+    async isValidCampaign(id) {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return false; // O ID não é um ObjectId válido
+        }
+
         await Database.connect();
         try {
             const exists = await model.Campaign.exists({ _id: id });
-            return {
-                error: !exists,
-                message: exists ? "Campaign ID is valid." : "Campaign ID does not exist."
-            };
+            console.log('Campaign exists ? : ', exists);
+            return exists ? true : false;
         } catch (error) {
+            throw error
             return {
                 error: true,
                 message: error.message
@@ -210,6 +222,7 @@ class UserService extends BaseModelService {
                     message: `Duplicate value: ${Object.keys(error.keyValue)[0]} already exists.`
                 };
             }
+            throw error
             return {
                 error: true,
                 message: error.message
